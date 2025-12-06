@@ -4,6 +4,7 @@
 
 ## Estrutura do projeto
 ```
+Server
 ├── Cargo.lock
 ├── Cargo.toml # Arquivo que descreve o projeto e contem as dependencias
 ├── migrations # Nesta pasta ficam os scripts SQL responsaveis por quaisquer modificações no banco de dados
