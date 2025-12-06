@@ -1,3 +1,4 @@
+use sqlx::postgres::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use dotenv::dotenv;
 use std::env;
@@ -7,6 +8,12 @@ mod handlers;
 mod config;
 mod routes;
 
+
+// Inicializando o banco de dados
+async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::Error> {
+    sqlx::migrate!("./migrations").run(pool).await?;
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +25,7 @@ async fn main() {
 
 
     let port= env::var("SERVER_PORT").unwrap_or_else(|err| {
-        eprint!("Nao foi possivel obter a porta: {}. usando o padrao 8000.\n", err);
+        eprintln!("Nao foi possivel obter a porta: {}. usando o padrao 8000.\n", err);
         "8000".to_string()
     });
 
@@ -35,6 +42,20 @@ async fn main() {
 
 
 
+    let migration_result = run_migrations(&pool)
+        .await;
+
+    match migration_result {
+        Ok(res) => {
+            println!("Migrations ran successfully");
+
+        }
+
+        Err(err) => {
+            eprintln!("Migration Error: {}", err)
+        }
+        
+    }
 
     let app = routes::create_routes().with_state(pool);
 

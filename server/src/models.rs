@@ -11,7 +11,7 @@ use sqlx::Type;
 
 
 #[derive(Serialize, Deserialize, Type, Debug)]
-#[sqlx(type_name = "class_level")]
+#[sqlx(type_name = "student_level")]
 pub enum StudentLevel {
     Undergraduate, // Graduacao
     Graduate, // Mestrado
@@ -22,8 +22,8 @@ pub enum StudentLevel {
 
 // Se a diciplina e de nivel superior ou de graduacao.
 #[derive(Serialize, Deserialize, Type, Debug)]
-#[sqlx(type_name = "class_level")]
-pub enum ClassLevel {
+#[sqlx(type_name = "course_level")]
+pub enum CourseLevel {
     Undergraduate,
     Graduate 
 }
@@ -34,24 +34,24 @@ pub enum ClassLevel {
 #[sqlx(type_name = "course_offering")]
 pub enum CourseOffering
 {
-    ODD, // Primeiro Semestre / Semestre impar
-    EVEN, // Segundo Semestre / Semestre par
-    BOTH, // Oferecida nos dois semestre
+    Odd, // Primeiro Semestre / Semestre impar
+    Even, // Segundo Semestre / Semestre par
+    Both, // Oferecida nos dois semestre
     None // Pode ser que a diciplina nao seja mais oferecida.
 }
 
 
 #[derive(Serialize, Deserialize, Type, Debug)]
-#[sqlx(type_name = "week_day")]
+#[sqlx(type_name = "weekday")]
 pub enum WeekDay
 {
-    MONDAY,
-    TUESDAY,
-    WEDNESDAY,
-    THURSDAY,
-    FRIDAY,
-    SATURDAY,
-    SUNDAY,
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
 
 }
 
@@ -69,21 +69,29 @@ pub enum AttendanceStatus {
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
 pub struct Course
 {
+    pub id: i32,
     pub code:String, // Nossa primary Key
     pub name:String,
-    pub level:ClassLevel,
-    pub department:String, // Instituto que oferece a materia
+    pub level:CourseLevel,
+    pub department:i16, // ID do instituto que oferece a materia
     pub credits:i8,
     pub offered:CourseOffering,
     pub syllabus:String, // Ementa
 }
 
 
+// Instituto
+pub struct Department
+{
+    pub id: i16,
+    pub name: String,
+}
+
 // Os requisitos de uma materia ficam em uma tabela propria, separada da materia em si
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
 pub struct CourseRequirement {
-    pub class_code: String,
-    pub requires: String,
+    pub course_code: i32,
+    pub requirement_code: i32,
 }
 
 
@@ -111,7 +119,7 @@ pub struct Student
 #[derive(Serialize, Deserialize, sqlx::FromRow)]
 pub struct Class {
     pub id: i32,
-    pub class_code:String,
+    pub class_code:i32,
     pub letter: char, // Seria o Z em F158 (Z)
 }
 
@@ -131,7 +139,5 @@ pub struct Attendance {
 pub struct Enrollment
 {
     pub student:i32, // RA do aluno
-    pub classId:i32,
-
-
+    pub class_id:i32,
 }

@@ -1,6 +1,7 @@
-use axum::{Json, extract::{Path, State, FromRequest}, response::IntoResponse, http::StatusCode};
+use axum::{Json, extract::{Path, State}, response::IntoResponse, http::StatusCode};
 use sqlx::PgPool;
-use crate::models::{Attendance, Course, CourseRequirement, Professor, Student, Class, Enrollment};
+use crate::models::Student;
+use serde_json::{Value, json};
 
 
 pub async fn create_student(
@@ -59,14 +60,3 @@ pub async fn get_student(
     }
 }
 
-
-
-pub async fn teste (
-    State(pool): State<PgPool>
-) -> impl IntoResponse {
-    let json:String = String::from("{'code':69}");
-    let result = Json::from(json);
-
-
-}
-    
