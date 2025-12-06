@@ -1,0 +1,26 @@
+# Esse arquivo tem a descricao basica do projeto.
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2024"
+
+
+
+# Seria equivalente ao requirements.txt do python
+[dependencies]
+dotenv = "0.15"        # Salvar as variaveis sensiveis no .env
+axum = "0.7"           # Framework web
+tokio = { version = "1", features = ["full"] }  # Usado para codigo asincrono do axum
+
+# Para JSON
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+
+# Para poder usar o postgres
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-native-tls", "macros"] }
+
+# Usado para lidar com datas
+chrono = { version = "0.4.42", features = ["serde"] }
+
+
