@@ -84,8 +84,7 @@ CREATE TABLE professors
 
 CREATE TABLE programs
 (
-    id            SERIAL PRIMARY KEY,
-    program_code  SMALLINT     NOT NULL UNIQUE,
+    program_code  SMALLINT PRIMARY KEY     NOT NULL UNIQUE,
     program_name  VARCHAR(100) NOT NULL,
     department_id SMALLINT     NOT NULL,
     FOREIGN KEY (department_id) REFERENCES departments (id)
