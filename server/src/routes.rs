@@ -1,6 +1,9 @@
-use sqlx::PgPool;
-use axum::{Router, routing::{get, post}};
 use crate::handlers;
+use sqlx::PgPool;
+use axum::{
+    Router,
+    routing::{get, post},
+};
 
 pub fn create_routes() -> Router<PgPool> {
     Router::new()
