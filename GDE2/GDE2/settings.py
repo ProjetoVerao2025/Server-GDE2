@@ -1,3 +1,5 @@
+
+
 """
 Django settings for GDE2 project.
 
@@ -30,7 +32,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
-INSTALLED_APPS = [
+INSTALLED_APPS = [ # sempre add na lista, qnd for criar um app
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
