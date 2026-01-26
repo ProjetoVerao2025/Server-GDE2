@@ -39,15 +39,7 @@ INSTALLED_APPS = [ # sempre add na lista, qnd for criar um app
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Attendance',
-    'Class',
-    'Course',
-    'CourseRequirement',
-    'Department',
-    'Enrollment',
-    'Professor',
-    'Program',
-    'Student',
+    'Academic',
 ]
 
 MIDDLEWARE = [
