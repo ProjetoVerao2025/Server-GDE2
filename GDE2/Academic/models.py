@@ -36,7 +36,7 @@ class Class(models.Model):  # sala específica (F159 Z)
     )
     letter = models.CharField()
     year_offered = models.IntegerField()
-    period_offered = models.IntegerChoices(choices = ClassOffering)
+    period_offered = models.IntegerField(choices = ClassOffering)
 
     def __str__(self):
         return f"{self.class_code}({self.letter})"
@@ -67,11 +67,13 @@ class Course(models.Model): # matéria que você paga
 class CourseRequirement(models.Model): # prérequisitos (MC202 precisa de MC102)
     course_code = models.OneToOneField( # essa matéria depende
         "Academic.Course",
-        on_delete = models.CASCADE
+        on_delete = models.CASCADE,
+            related_name = "course_code"
     )
-    requirement_code = models.ForeignKey(
-        "Academic.Requirement",
-        on_delete = models.CASCADE
+    requirement_code = models.OneToOneField(
+        "Academic.Course",
+        on_delete = models.CASCADE,
+        related_name = "requirement_code"
     ) # dessa
 
 class Department(models.Model):
@@ -105,7 +107,7 @@ class Program(models.Model): # Curso que você cursa (CC == 42)
     
     def __str__(self):
         return f"{self.name}"
-
+    
 class Student(models.Model):
     class StudentLevel(models.IntegerChoices):
         Undergraduate = 1  
@@ -121,7 +123,6 @@ class Student(models.Model):
         on_delete = models.CASCADE
     )
     level = models.IntegerField(choices = StudentLevel)
-    email = models.CharField(max_length = 255, default = None)
     password = models.CharField(max_length = 255, default = None)
 
     def __str__(self):
