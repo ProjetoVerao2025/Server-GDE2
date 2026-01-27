@@ -23,7 +23,7 @@ class Attendance(models.Model):
     date = models.DateTimeField()
     status = models.IntegerField(choices = AttendanceStatus)
 
-class Class(models.Model):  # sala específica (F159 Z)
+class Class(models.Model):  # turma específica (F159 Z)
     class ClassOffering(models.IntegerChoices): # Período em que a matéria é oferecida
         odd = 1
         even = 2
@@ -85,8 +85,7 @@ class Department(models.Model):
 class Enrollment(models.Model):
     student_id = models.OneToOneField(
         "Academic.Student",
-        on_delete = models.CASCADE
-    )
+        on_delete = models.CASCADE)
     class_id = models.OneToOneField(
         "Academic.Class",
         on_delete = models.CASCADE
@@ -131,3 +130,33 @@ class Student(models.Model):
         if not self.password.startswith('pbkdf2_sha256$'):
             self.password = make_password(self.password)
         super().save()
+
+
+
+class ClassLocation(models.Model): # Salas de aula
+    name = models.TextField()
+    capacity = models.IntegerField()
+    building = models.TextField()
+    floor = models.IntegerField()
+
+
+class ClassSchedule(models.Model): # Horarios das aulas das turmas
+    class Weekdays(models.IntegerChoices):
+        Monday = 1
+        Tuesday = 2
+        Wednesday = 3
+        Thursday = 4
+        Friday = 5
+        Saturday = 6
+        Sunday = 7
+
+    weekday = models.IntegerField(choices=Weekdays)
+    start_hour = models.IntegerField()
+    lesson_count = models.IntegerField()
+    
+    # Sala onde a aula ocorre
+    location = models.ForeignKey(
+        Classroom, 
+        on_delete=models.CASCADE,
+        related_name="schedules"
+    )
