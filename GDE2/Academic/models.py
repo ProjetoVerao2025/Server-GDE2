@@ -7,21 +7,26 @@ from django.contrib.auth.hashers import make_password
 class Attendance(models.Model):
     class AttendanceStatus(models.IntegerChoices):
         Present = 1
-        absent = 2
-        excused = 3
+        Absent = 2
+        Excused = 3
 
-    class_id = models.OneToOneField(
+    academic_class = models.ForeignKey(
         "Academic.Class",
-        on_delete = models.CASCADE
+        to_field='id',
+        on_delete=models.CASCADE
     )
 
-    student_id = models.OneToOneField(
+    student = models.ForeignKey(
         "Academic.Student",
-        on_delete = models.CASCADE
+        to_field='ra',
+        on_delete=models.CASCADE
     )
 
     date = models.DateTimeField()
-    status = models.IntegerField(choices = AttendanceStatus)
+    status = models.IntegerField(choices=AttendanceStatus)
+
+    class Meta:
+        unique_together = ("academic_class", "student", "date")
 
 class Class(models.Model):  # turma específica (F159 Z)
     class ClassOffering(models.IntegerChoices): # Período em que a matéria é oferecida
@@ -30,11 +35,11 @@ class Class(models.Model):  # turma específica (F159 Z)
         sp = 3
 
     id = models.IntegerField(primary_key = True)
-    course_code = models.OneToOneField(
+    course = models.ForeignKey(
         "Academic.Course",
         on_delete = models.CASCADE
     )
-    letter = models.CharField()
+    letter = models.CharField(max_length=1)
     year_offered = models.IntegerField()
     period_offered = models.IntegerField(choices=ClassOffering)
 
@@ -65,13 +70,16 @@ class Course(models.Model): # matéria que você paga
         return f"{self.code}"
  
 class CourseRequirement(models.Model): # prérequisitos (MC202 precisa de MC102)
-    course_code = models.OneToOneField( # essa matéria depende
+    course_code = models.ForeignKey( # essa matéria depende
         "Academic.Course",
-        on_delete = models.CASCADE
+        on_delete = models.CASCADE,
+        to_field='id',
+        related_name="Course"
     )
     requirement_code = models.ForeignKey(
-        "Academic.Requirement",
-        on_delete = models.CASCADE
+        "Academic.Course",
+        on_delete = models.CASCADE,
+        related_name="Requirement"
     ) # dessa
 
 class Department(models.Model):
@@ -82,14 +90,6 @@ class Department(models.Model):
     def __str__(self):
         return f"{self.acronym}"
 
-class Enrollment(models.Model):
-    student_id = models.OneToOneField(
-        "Academic.Student",
-        on_delete = models.CASCADE)
-    class_id = models.OneToOneField(
-        "Academic.Class",
-        on_delete = models.CASCADE
-    )
 
 class Professor(models.Model):
     id = models.IntegerField(primary_key = True)
@@ -115,25 +115,38 @@ class Student(models.Model):
     
     ra = models.IntegerField(primary_key = True)
     name = models.CharField(max_length = 100)
-    program_code = models.OneToOneField(
+    program_code = models.ForeignKey(
         "Academic.Program",
         on_delete = models.CASCADE
     )
     level = models.IntegerField(choices = StudentLevel)
-    email = models.CharField(max_length = 255, default = None)
-    password = models.CharField(max_length = 255, default = None)
+    email = models.CharField(max_length = 255, null=True)
+    password = models.CharField(max_length = 255, null=True)
 
     def __str__(self):
         return f"{self.ra:06d}"
 
-    def save(self):
-        if not self.password.startswith('pbkdf2_sha256$'):
+    def save(self, *args, **kwargs):
+        if self.password and not self.password.startswith("pbkdf2_sha256$"):
             self.password = make_password(self.password)
-        super().save()
+        super().save(*args, **kwargs)
 
+class Enrollment(models.Model):
+    student = models.ForeignKey(
+        "Academic.Student",
+        on_delete=models.CASCADE,
+        to_field="ra"
+        
+    )
+    academic_class = models.ForeignKey(
+        "Academic.Class",
+        to_field='id',
+        on_delete=models.CASCADE
+    )
 
 
 class ClassLocation(models.Model): # Salas de aula
+    id = models.IntegerField(primary_key=True, auto_created=True)
     name = models.TextField()
     capacity = models.IntegerField()
     building = models.TextField()
@@ -156,7 +169,6 @@ class ClassSchedule(models.Model): # Horarios das aulas das turmas
     
     # Sala onde a aula ocorre
     location = models.ForeignKey(
-        Classroom, 
+        "Academic.ClassLocation", 
         on_delete=models.CASCADE,
-        related_name="schedules"
     )
