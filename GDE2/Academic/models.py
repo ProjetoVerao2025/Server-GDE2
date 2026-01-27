@@ -36,7 +36,7 @@ class Class(models.Model):  # sala específica (F159 Z)
     )
     letter = models.CharField()
     year_offered = models.IntegerField()
-    period_offered = models.IntegerChoices(choices = ClassOffering)
+    period_offered = models.IntegerField(choices=ClassOffering)
 
     def __str__(self):
         return f"{self.class_code}({self.letter})"
