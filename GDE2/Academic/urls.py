@@ -4,6 +4,6 @@ from django.urls import path, include
 from .views import *
 
 urlpatterns = [
-    path("create-student", create_user)
+    path("create-student", create_user),
 ]
 

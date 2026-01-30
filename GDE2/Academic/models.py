@@ -28,20 +28,6 @@ class Attendance(models.Model):
     class Meta:
         unique_together = ("academic_class", "student", "date")
 
-class Class(models.Model):  # turma específica (F159 Z)
-    class ClassOffering(models.IntegerChoices): # Período em que a matéria é oferecida
-        odd = 1
-        even = 2
-        sp = 3
-
-    id = models.IntegerField(primary_key = True)
-    course = models.ForeignKey(
-        "Academic.Course",
-        on_delete = models.CASCADE
-    )
-    letter = models.CharField(max_length=1)
-    year_offered = models.IntegerField()
-    period_offered = models.IntegerField(choices=ClassOffering)
 
     def __str__(self):
         return f"{self.class_code}({self.letter})"
@@ -105,6 +91,54 @@ class Program(models.Model): # Curso que você cursa (CC == 42)
     def __str__(self):
         return f"{self.name}"
     
+
+
+
+class ClassLocation(models.Model): # Salas de aula
+    id = models.IntegerField(primary_key=True, auto_created=True)
+    name = models.TextField()
+    capacity = models.IntegerField()
+    building = models.TextField()
+    floor = models.IntegerField() 
+
+
+class ClassSchedule(models.Model): # Horarios das aulas das turmas
+    class Weekdays(models.IntegerChoices):
+        Monday = 1
+        Tuesday = 2
+        Wednesday = 3
+        Thursday = 4
+        Friday = 5
+        Saturday = 6
+        Sunday = 7
+
+    weekday = models.IntegerField(choices=Weekdays)
+    start_hour = models.IntegerField()
+    lesson_count = models.IntegerField()
+
+    # Sala onde a aula ocorre
+    location = models.ForeignKey(
+        "Academic.ClassLocation", 
+        on_delete=models.CASCADE,
+    )
+
+class Class(models.Model):  # turma específica (F159 Z)
+    class ClassOffering(models.IntegerChoices): # Período em que a matéria é oferecida
+        odd = 1
+        even = 2
+        sp = 3
+
+    id = models.IntegerField(primary_key = True)
+
+    course = models.ForeignKey(
+        "Academic.Course",
+        on_delete = models.CASCADE
+    )
+    letter = models.CharField(max_length=1)
+    year_offered = models.IntegerField()
+    period_offered = models.IntegerField(choices = ClassOffering)
+    class_schedule = models.ManyToManyField(ClassSchedule)
+
 class Student(models.Model):
     class StudentLevel(models.IntegerChoices):
         Undergraduate = 1  
@@ -112,7 +146,8 @@ class Student(models.Model):
         Doctoral = 3
         Exchange = 4
         VisitingStudent = 5
-    
+
+    enrollments = models.ManyToManyField(Class, blank= True)  
     ra = models.IntegerField(primary_key = True)
     name = models.CharField(max_length = 100)
     program_code = models.ForeignKey(
@@ -130,45 +165,3 @@ class Student(models.Model):
         if self.password and not self.password.startswith("pbkdf2_sha256$"):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
-
-class Enrollment(models.Model):
-    student = models.ForeignKey(
-        "Academic.Student",
-        on_delete=models.CASCADE,
-        to_field="ra"
-        
-    )
-    academic_class = models.ForeignKey(
-        "Academic.Class",
-        to_field='id',
-        on_delete=models.CASCADE
-    )
-
-
-class ClassLocation(models.Model): # Salas de aula
-    id = models.IntegerField(primary_key=True, auto_created=True)
-    name = models.TextField()
-    capacity = models.IntegerField()
-    building = models.TextField()
-    floor = models.IntegerField()
-
-
-class ClassSchedule(models.Model): # Horarios das aulas das turmas
-    class Weekdays(models.IntegerChoices):
-        Monday = 1
-        Tuesday = 2
-        Wednesday = 3
-        Thursday = 4
-        Friday = 5
-        Saturday = 6
-        Sunday = 7
-
-    weekday = models.IntegerField(choices=Weekdays)
-    start_hour = models.IntegerField()
-    lesson_count = models.IntegerField()
-    
-    # Sala onde a aula ocorre
-    location = models.ForeignKey(
-        "Academic.ClassLocation", 
-        on_delete=models.CASCADE,
-    )
