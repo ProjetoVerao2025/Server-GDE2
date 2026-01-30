@@ -117,6 +117,7 @@ class Student(models.Model):
     name = models.CharField(max_length = 100)
     program_code = models.ForeignKey(
         "Academic.Program",
+        db_column="program_code_id",
         on_delete = models.CASCADE
     )
     level = models.IntegerField(choices = StudentLevel)
