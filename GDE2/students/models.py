@@ -1,0 +1,60 @@
+from django.db import models
+
+from django.contrib.auth.hashers import make_password
+
+# Create your models here.
+
+class Attendance(models.Model):
+    class AttendanceStatus(models.IntegerChoices):
+        Present = 1
+        Absent = 2
+        Excused = 3
+
+    academic_class = models.ForeignKey(
+        "Academic.Class",
+        to_field='id',
+        on_delete=models.CASCADE
+    )
+
+    student = models.ForeignKey(
+        "Academic.Student",
+        to_field='ra',
+        on_delete=models.CASCADE
+    )
+
+    date = models.DateTimeField()
+    status = models.IntegerField(choices=AttendanceStatus)
+
+    class Meta:
+        unique_together = ("academic_class", "student", "date")
+
+
+    def __str__(self):
+        return f"{self.class_code}({self.letter})"
+
+class Student(models.Model):
+    class StudentLevel(models.IntegerChoices):
+        Undergraduate = 1  
+        Graduate = 2
+        Doctoral = 3
+        Exchange = 4
+        VisitingStudent = 5
+
+    enrollments = models.ManyToManyField(Class, blank= True)  
+    ra = models.IntegerField(primary_key = True)
+    name = models.CharField(max_length = 100)
+    program_code = models.ForeignKey(
+        "Academic.Program",
+        on_delete = models.CASCADE
+    )
+    level = models.IntegerField(choices = StudentLevel)
+    email = models.CharField(max_length = 255, null=True)
+    password = models.CharField(max_length = 255, null=True)
+
+    def __str__(self):
+        return f"{self.ra:06d}"
+
+    def save(self, *args, **kwargs):
+        if self.password and not self.password.startswith("pbkdf2_sha256$"):
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
