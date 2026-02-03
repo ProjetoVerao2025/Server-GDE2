@@ -51,7 +51,7 @@ class ClassSchedule(models.Model): # Horarios das aulas das turmas
 
     # Sala onde a aula ocorre
     location = models.ForeignKey(
-        "Academic.ClassLocation", 
+        "institutional.ClassLocation", 
         on_delete=models.CASCADE,
     )
 class Class(models.Model):  # turma específica (F159 Z)
@@ -63,7 +63,7 @@ class Class(models.Model):  # turma específica (F159 Z)
     id = models.IntegerField(primary_key = True)
 
     course = models.ForeignKey(
-        "Academic.Course",
+        "institutional.Course",
         on_delete = models.CASCADE
     )
     letter = models.CharField(max_length=1)
@@ -95,13 +95,13 @@ class Course(models.Model): # matéria que você paga
  
 class CourseRequirement(models.Model): # prérequisitos (MC202 precisa de MC102)
     course_code = models.ForeignKey( # essa matéria depende
-        "Academic.Course",
+        "institutional.Course",
         on_delete = models.CASCADE,
         to_field='id',
         related_name="Course"
     )
     requirement_code = models.ForeignKey(
-        "Academic.Course",
+        "institutional.Course",
         on_delete = models.CASCADE,
         related_name="Requirement"
     ) # dessa

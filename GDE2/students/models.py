@@ -1,5 +1,5 @@
 from django.db import models
-
+from institutional.models import Class, Program
 from django.contrib.auth.hashers import make_password
 
 # Create your models here.
@@ -11,13 +11,13 @@ class Attendance(models.Model):
         Excused = 3
 
     academic_class = models.ForeignKey(
-        "Academic.Class",
+        "institutional.Class",
         to_field='id',
         on_delete=models.CASCADE
     )
 
     student = models.ForeignKey(
-        "Academic.Student",
+        "students.Student",
         to_field='ra',
         on_delete=models.CASCADE
     )
@@ -44,7 +44,7 @@ class Student(models.Model):
     ra = models.IntegerField(primary_key = True)
     name = models.CharField(max_length = 100)
     program_code = models.ForeignKey(
-        "Academic.Program",
+        "institutional.Program",
         on_delete = models.CASCADE
     )
     level = models.IntegerField(choices = StudentLevel)

@@ -36,7 +36,7 @@ def enroll_student(request: HttpRequest):
             schedule = ClassSchedule.objects.filter(class__id = c.id)
             for h in schedule:
                 end = h.start_hour + h.lesson_count
-                if (full_schedule[0] == h.weekday and (full_schedule[1] <= end or full_schedule[2] >= h.start_hour):
+                if full_schedule[0] == h.weekday and (full_schedule[1] <= end or full_schedule[2] >= h.start_hour):
                     conflicts.append([h.weekday, h.start_hour, c.id])
 
         if conflicts:
@@ -48,11 +48,11 @@ def enroll_student(request: HttpRequest):
 
     return JsonResponse({"status": -1, "message": "RA não cadastrado."})
 
-def fecth_home(request: HttpRequest):
-    payload = json.loads(request.body)
-    if "ra" not in payload:
-        return JsonResponse({"status": -1, "message": "RA não cadastrado")
-    elif:
+# def fecth_home(request: HttpRequest):
+    # payload = json.loads(request.body)
+    # if "ra" not in payload:
+        # return JsonResponse({"status": -1, "message": "RA não cadastrado")
+    # elif:
 
 
 
