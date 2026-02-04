@@ -1,25 +1,132 @@
+from django.apps import apps
 from django.shortcuts import render
 from django.http import HttpRequest, JsonResponse
 from django.db import models
 from .models import *
 from datetime import *
 import json
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST, require_GET
+from django.contrib.auth import logout, login
+from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth import authenticate
 
-def create_user(request :HttpRequest):
-    payload = json.loads(request.body)
 
+
+# Debug ony: Usado durante o desenvolvimento para verificar
+# Se a autenticacao estava funcionando corretamente
+@csrf_exempt
+@require_GET
+def whoami(request:HttpRequest):
+    if request.user.is_authenticated:
+        return JsonResponse({"status": 0, "message": request.user.get_username()})
+    return JsonResponse({"status": 0, "message": "user unknown"})
+
+
+
+
+@csrf_exempt
+@require_POST
+def logout_view(request:HttpRequest):
+    logout(request)
+    print('rebolei leintiho')
+    return JsonResponse({"status": -1, "message": "Logout realizado com sucesso!"})
+
+
+
+@csrf_exempt
+@require_POST
+def register(request :HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"status": -1, "message": "Formato invalido. Payload apenas em JSON."})
+
+    
     if Student.objects.filter(ra = payload["ra"]).exists():
         return JsonResponse({"status": -1, "message": "Já existe um usuário com esse RA."})
+    
+    Program = apps.get_model("institutional", "Program")
 
-    newUser = Student(
+    try:
+        program = Program.objects.get(id=payload["program_code"])
+    except ObjectDoesNotExist:
+        return JsonResponse({"status": -1, "message": f"Nao existe curso com id {payload['program_code']}"})
+
+
+    try:
+        level = Student.StudentLevel[payload["level"]]
+    except KeyError:
+        return JsonResponse({"status": -1, "message": f"Valor do campo level invalido. Valores validos: Undergraduate, Graduate, Doctoral, Exchange, VisitingStudent"})
+
+    newUser = User.objects.create_user(
+        username=payload["ra"],
+        email=payload["email"],
+        password=payload["password"],
+    )
+
+        
+
+    Student.objects.create(
         ra = payload["ra"],
         name = payload["name"],
-        program_code = payload["program_code"],
-        level = payload["level"],
-        password = make_password(payload["password"])
+        level = level,
+        program_code = program,
+        user=newUser
         )
-    newUser.save()
-    return JsonResponse({"status": 1, "message": "Criado com sucesso."})
+
+    return JsonResponse({"status": 0, "message": "Criado com sucesso."})
+
+
+@csrf_exempt
+@require_POST
+def login_view(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"status": -1, "message": "Formato invalido. Payload apenas em JSON."})
+
+    ra = payload.get("ra")
+    password = payload.get("password")
+
+    if not ra or not password:
+        return JsonResponse(
+            {"status": -1, "message": "RA e senha são obrigatórios"},
+            status=400
+        )
+
+    try:
+        student = Student.objects.get(ra=ra)
+    except ObjectDoesNotExist:
+        return JsonResponse(
+            {"status": -1, "message": "Credenciais inválidas"},
+            status=401
+        )
+
+    user = authenticate(
+        request,
+        username=ra,
+        password=password
+    )
+
+    if user is None:
+        return JsonResponse(
+            {"status": -1, "message": "Credenciais inválidas"},
+            status=401
+        )
+
+    login(request, user)
+    return JsonResponse({"status": 0, "message": "Logged in"})
+
+
+
+
+@csrf_exempt
+@require_POST
+def logout_view(request):
+    logout(request)
+    return JsonResponse({"ok": True})
+
 
 def enroll_student(request: HttpRequest):
     payload = json.loads(request.body)
@@ -53,16 +160,3 @@ def enroll_student(request: HttpRequest):
     # if "ra" not in payload:
         # return JsonResponse({"status": -1, "message": "RA não cadastrado")
     # elif:
-
-
-
-
-
-
-
-
-
-
-
-
-

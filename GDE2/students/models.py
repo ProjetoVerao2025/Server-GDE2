@@ -1,6 +1,7 @@
 from django.db import models
 from institutional.models import Class, Program
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -40,6 +41,7 @@ class Student(models.Model):
         Exchange = 4
         VisitingStudent = 5
 
+    user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
     enrollments = models.ManyToManyField(Class, blank= True)  
     ra = models.IntegerField(primary_key = True)
     name = models.CharField(max_length = 100)
@@ -48,13 +50,8 @@ class Student(models.Model):
         on_delete = models.CASCADE
     )
     level = models.IntegerField(choices = StudentLevel)
-    email = models.CharField(max_length = 255, null=True)
-    password = models.CharField(max_length = 255, null=True)
 
     def __str__(self):
         return f"{self.ra:06d}"
 
-    def save(self, *args, **kwargs):
-        if self.password and not self.password.startswith("pbkdf2_sha256$"):
-            self.password = make_password(self.password)
-        super().save(*args, **kwargs)
+
