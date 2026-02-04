@@ -129,34 +129,49 @@ def logout_view(request):
 
 
 def enroll_student(request: HttpRequest):
-    payload = json.loads(request.body)
+	"""
+	Receives a JSON with the RA of the enrolling student and the ID of the class in which to enroll.
+	Returns a JSON with a STATUS (-1 for Error and 1 for Success) and a MESSAGE
+	"""
+	try:
+		payload = json.loads(request.body)
+	except:
+		return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
 
-    if Student.objects.filter(ra = payload["ra"]).exists():
-        user = Student.objects.filter(ra = payload["ra"]).get()
-        full_schedule = []
-        schedule = ClassSchedule.objects.filter(class__id = payload["id"])
-        for h in schedule:
-            full_schedule.append((h.weekday, h.start_hour, h.start_hour + h.lesson_count))
+	if "ra" not in payload:
+		return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
 
-        conflicts = []
-        for c in Class.objects.filter(student__ra = payload["ra"]):
-            schedule = ClassSchedule.objects.filter(class__id = c.id)
-            for h in schedule:
-                end = h.start_hour + h.lesson_count
-                if full_schedule[0] == h.weekday and (full_schedule[1] <= end or full_schedule[2] >= h.start_hour):
-                    conflicts.append([h.weekday, h.start_hour, c.id])
+	if "id" not in payload:
+		return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
 
-        if conflicts:
-            return JsonResponse({"status": -1, "message": "Horário indisponível.", "conflicts": conflicts})
+	if not Student.objects.filter(ra = payload["ra"]).exists():
+		return JsonResponse({"status": -1, "message": f"RA {payload["ra"]} não cadastrado"})
 
-        class_to_enroll = Class.objects.filter(id = payload["id"]).get()
-        user.enrollments.add(class_to_enroll)
-        return JsonResponse({"status": 1, "message": "Matéria matriculada com sucesso."})
+	if not Class.objects.filter(id = payload["id"]).exists():
+		return JsonResponse({"status": -1, "message": f"Turma com ID {payload["id"]} não existe"})
 
-    return JsonResponse({"status": -1, "message": "RA não cadastrado."})
+	new_class_schedule = []
+	schedule = ClassSchedule.objects.filter(class__id = payload["id"])
+	for lesson in schedule:
+		new_class_schedule.append((lesson.weekday, lesson.start_hour, lesson.start_hour + lesson.lesson_count))
 
-# def fecth_home(request: HttpRequest):
-    # payload = json.loads(request.body)
-    # if "ra" not in payload:
-        # return JsonResponse({"status": -1, "message": "RA não cadastrado")
-    # elif:
+	conflicts = []
+	user_schedule = []
+	for c in Class.objects.filter(student__ra = payload["ra"]):
+		schedule = ClassSchedule.objects.filter(class__id = c.id)
+		for lesson in schedule:
+			user.append((lesson.weekday, lesson.start_hour, lesson.start_hour + lesson.lesson_count, c.id))
+
+	for new_class_lesson in new_class_schedule:
+		for lesson in user_schedule:
+			if lesson[0] == new_class_lesson[0] and not (lesson[1] >= new_class_lesson[2] or lesson[2] <= new_class_lesson[1]):
+				conflicts.append([h.weekday, h.start_hour, lesson[3]])
+
+	if conflicts:
+		return JsonResponse({"status": -1, "message": "Horário indisponível.", "conflicts": conflicts})
+
+	class_to_enroll = Class.objects.filter(id = payload["id"]).get()
+	user = Student.objects.filter(ra = payload["ra"]).get()
+	user.enrollments.add(class_to_enroll)
+	return JsonResponse({"status": 1, "message": "Matéria matriculada com sucesso."})
+
