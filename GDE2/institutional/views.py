@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpRequest, JsonResponse
 from django.db import models
 from .models import *
-from utils import *
+from utils import _get_schedule, _get_current_period
 from datetime import datetime
 import json
 
@@ -60,7 +60,7 @@ def fetch_courses(request: HttpRequest):
 		courses = Course.objects.filter(name__icontains = payload["body"])
 
 	elif payload["criteria"] == "department":
-		courses = Course.objects.filter(department__icontains = payload["body"])
+		courses = Course.objects.filter(department__name__icontains = payload["body"])
 
 	else:
 		return JsonResponse({"status": -1, "message": "Critério de busca inválido"})
@@ -93,8 +93,8 @@ def fetch_classes(request: HttpRequest):
 			Class.objects.filter(
 				course = fetched_course.id,
 				year_offered = datetime.now().year,
-				period_offered = _get_current_period())
-			),
+				period_offered = _get_current_period()
+			)),
 		key = lambda x: x["letter"]
 	)
 	if not classes:

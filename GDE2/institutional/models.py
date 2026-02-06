@@ -122,7 +122,10 @@ class Course(models.Model): # matéria que você paga
     code = models.CharField(max_length = 5)
     name = models.CharField(max_length = 100)
     courseLevel = models.IntegerField(choices = CourseLevel) 
-    department = models.IntegerField()
+    department = models.ForeignKey(
+		"institutional.Department",
+		on_delete = models.CASCADE
+	)
     credits = models.IntegerField()
     offered = models.IntegerField(choices = CourseOffering) 
     syllabus = models.CharField(max_length = 1000) # ementa

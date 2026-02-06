@@ -15,11 +15,11 @@ def _get_schedule(_class: Class):
 				"weekday": x.weekday,
 				"start_hour": x.start_hour,
 				"lesson_count": x.lesson_count,
-				"location": ClassLocation.objects.filter(id = x.location).get().building
+				"location": x.location.building
 			},
 			_class.class_schedule.all()
 		),
-		key = lambda x: (x["weekday"], x["starthour"])
+		key = lambda x: (x["weekday"], x["start_hour"])
 	)
 		
 def _get_current_period():
