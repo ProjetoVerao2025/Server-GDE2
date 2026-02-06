@@ -10,7 +10,8 @@ from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth import logout, login
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate
-
+from utils import _get_schedule, _get_enrolls
+from institutional.models import Course
 
 
 # Debug ony: Usado durante o desenvolvimento para verificar
@@ -22,9 +23,6 @@ def whoami(request:HttpRequest):
         return JsonResponse({"status": 0, "message": request.user.get_username()})
     return JsonResponse({"status": 0, "message": "user unknown"})
 
-
-
-
 @csrf_exempt
 @require_POST
 def logout_view(request:HttpRequest):
@@ -32,6 +30,67 @@ def logout_view(request:HttpRequest):
     print('rebolei leintiho')
     return JsonResponse({"status": -1, "message": "Logout realizado com sucesso!"})
 
+
+def fetch_home(request: HttpRequest): #só recebe o ra no json, retorna nome, matricula(horários, local, acronimo e letra) e hor
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+    
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+    
+    user = Student.objects.filter(ra = payload["ra"])
+    if not user.exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+
+    user = user.get()
+    enrolls = _get_enrolls(user)
+
+    return JsonResponse({
+        "status": 1,
+        "message": "Deu tudo certo ao buscar as informações da home",
+        "enrollments": enrolls,
+        "name": user.name
+    })
+
+def fetch_profile_infos(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+    user = Student.objects.filter(payload["ra"])
+    if not user.exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+    
+    user = user.get()
+    course_name = Course.objects.filter(id = user.program_code)
+    return JsonResponse({"status": 1,
+                        "message": "Deu certo ao procurar as informações do perfil",
+                        "course": course_name,
+                        "ra": user.ra,
+                        "name": user.name,
+                        "credits":user.credits
+                        })
+
+def fetch_enrollments(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+    user = Student.objects.filter(ra = payload["ra"])
+    if not user.exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+    
+    user = user.get()
+    enrolls = _get_enrolls(user)
+    return JsonResponse({"status": 1,
+                        "message": "Deu tudo certo ao buscar informações das matrículas do estudante",
+                        "enrollments": enrolls})
 
 
 @csrf_exempt
@@ -145,10 +204,10 @@ def enroll_student(request: HttpRequest):
 		return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
 
 	if not Student.objects.filter(ra = payload["ra"]).exists():
-		return JsonResponse({"status": -1, "message": f"RA {payload["ra"]} não cadastrado"})
+		return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
 
 	if not Class.objects.filter(id = payload["id"]).exists():
-		return JsonResponse({"status": -1, "message": f"Turma com ID {payload["id"]} não existe"})
+		return JsonResponse({"status": -1, "message": f"Turma com ID {payload['id']} não existe"})
 
 	new_class_schedule = []
 	schedule = ClassSchedule.objects.filter(class__id = payload["id"])

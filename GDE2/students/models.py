@@ -42,7 +42,7 @@ class Student(models.Model):
         VisitingStudent = 5
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, blank=True, null=True)
-    enrollments = models.ManyToManyField(Class, blank= True)  
+    enrollments = models.ManyToManyField(Class, blank= True, null = True)  
     ra = models.IntegerField(primary_key = True)
     name = models.CharField(max_length = 100)
     program_code = models.ForeignKey(

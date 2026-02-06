@@ -21,7 +21,7 @@ def class_page(request: HttpRequest):
 		return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
 
 	if not Class.objects.filter(id = payload["id"]).exists():
-		return JsonResponse({"status": -1, "message": f"Turma com ID {payload["id"]} não existe"})
+		return JsonResponse({"status": -1, "message": f"Turma com ID {payload['id']} não existe"})
 	
 	req_class = Class.objects.filter(id = payload["id"]).get()
 	req_class_schedule = _get_schedule(req_class)
@@ -41,7 +41,7 @@ def class_page(request: HttpRequest):
 
 	})
 
-def fetch_courses(request: HttpsRequest):
+def fetch_courses(request: HttpRequest):
 	try:
 		payload = json.loads(request.body)
 	except:
@@ -84,7 +84,7 @@ def fetch_classes(request: HttpRequest):
 	try:
 		fetched_course = Course.objects.filter(id = payload["id"]).get()
 	except:
-		return JsonResponse({"status": -1, "message": f"Curso com ID {payload["id"]} não existe"})
+		return JsonResponse({"status": -1, "message": f"Curso com ID {payload['id']} não existe"})
 	
 	format_class = lambda x: {"letter": x.letter, "schedule": _get_schedule(x)}
 	classes = sorted(

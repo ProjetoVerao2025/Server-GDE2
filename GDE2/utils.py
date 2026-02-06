@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpRequest, JsonResponse
 from django.db import models
+from institutional.models import *
+from students.models import *
+
 # from .models import *
 from datetime import datetime
 import json
@@ -28,3 +31,15 @@ def _get_current_period():
 		return 2
 
 	return 3
+
+def _get_enrolls(user: Student):
+	enrolls = []
+	for e in user.enrollments.all():
+		temp = _get_schedule(e)
+		enrolls.append({
+    	"schedule": temp,
+    	"id": e.id,
+    	"code": Course.objects.filter(id = e.course).get().code,
+    	"letter": e.letter
+    	})
+	return enrolls
