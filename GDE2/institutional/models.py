@@ -24,41 +24,17 @@ class Program(models.Model): # Curso que você cursa (CC == 42)
     def __str__(self):
         return f"{self.name}"
     
-class Student(models.Model):
-    class StudentLevel(models.IntegerChoices):
-        Undergraduate = 1  
-        Graduate = 2
-        Doctoral = 3
-        Exchange = 4
-        VisitingStudent = 5
-    
-    ra = models.IntegerField(primary_key = True)
-    name = models.CharField(max_length = 100)
-    program_code = models.ForeignKey(
-        "Academic.Program",
-        on_delete = models.CASCADE
-    )
-    level = models.IntegerField(choices = StudentLevel)
-    email = models.CharField(max_length = 255, null=True)
-    password = models.CharField(max_length = 255, null=True)
-
-    def __str__(self):
-        return f"{self.ra:06d}"
-
-    def save(self, *args, **kwargs):
-        if self.password and not self.password.startswith("pbkdf2_sha256$"):
-            self.password = make_password(self.password)
-        super().save(*args, **kwargs)
 
 class Enrollment(models.Model):
     student = models.ForeignKey(
-        "Academic.Student",
+        "students.Student",
         on_delete=models.CASCADE,
         to_field="ra"
         
     )
+
     academic_class = models.ForeignKey(
-        "Academic.Class",
+        "institutional.Class",
         to_field='id',
         on_delete=models.CASCADE
     )
