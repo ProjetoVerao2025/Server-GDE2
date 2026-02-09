@@ -11,7 +11,7 @@ from django.contrib.auth import logout, login
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate
 from utils import _get_schedule, _get_enrolls
-from institutional.models import Course
+from institutional.models import Course, ClassSchedule
 
 
 # Debug ony: Usado durante o desenvolvimento para verificar
@@ -188,49 +188,48 @@ def logout_view(request):
 
 
 def enroll_student(request: HttpRequest):
-	"""
-	Receives a JSON with the RA of the enrolling student and the ID of the class in which to enroll.
-	Returns a JSON with a STATUS (-1 for Error and 1 for Success) and a MESSAGE
-	"""
-	try:
-		payload = json.loads(request.body)
-	except:
-		return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+    """
+    Receives a JSON with the RA of the enrolling student and the ID of the class in which to enroll.
+    Returns a JSON with a STATUS (-1 for Error and 1 for Success) and a MESSAGE
+    """
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
 
-	if "ra" not in payload:
-		return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
 
-	if "id" not in payload:
-		return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
+    if "id" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
 
-	if not Student.objects.filter(ra = payload["ra"]).exists():
-		return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+    if not Student.objects.filter(ra = payload["ra"]).exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
 
-	if not Class.objects.filter(id = payload["id"]).exists():
-		return JsonResponse({"status": -1, "message": f"Turma com ID {payload['id']} não existe"})
+    if not Class.objects.filter(id = payload["id"]).exists():
+        return JsonResponse({"status": -1, "message": f"Turma com ID {payload['id']} não existe"})
 
-	new_class_schedule = []
-	schedule = ClassSchedule.objects.filter(class__id = payload["id"])
-	for lesson in schedule:
-		new_class_schedule.append((lesson.weekday, lesson.start_hour, lesson.start_hour + lesson.lesson_count))
+    new_class_schedule = []
+    schedule = ClassSchedule.objects.filter(class__id = payload["id"])
+    for lesson in schedule:
+        new_class_schedule.append((lesson.weekday, lesson.start_hour, lesson.start_hour + lesson.lesson_count))
 
-	conflicts = []
-	user_schedule = []
-	for c in Class.objects.filter(student__ra = payload["ra"]):
-		schedule = ClassSchedule.objects.filter(class__id = c.id)
-		for lesson in schedule:
-			user.append((lesson.weekday, lesson.start_hour, lesson.start_hour + lesson.lesson_count, c.id))
+    conflicts = []
+    user_schedule = []
+    for c in Class.objects.filter(student__ra = payload["ra"]):
+        for lesson in c.class_schedule.all():
+            user_schedule.append((lesson.weekday, lesson.start_hour, lesson.start_hour + lesson.lesson_count, c.id))
 
-	for new_class_lesson in new_class_schedule:
-		for lesson in user_schedule:
-			if lesson[0] == new_class_lesson[0] and not (lesson[1] >= new_class_lesson[2] or lesson[2] <= new_class_lesson[1]):
-				conflicts.append([h.weekday, h.start_hour, lesson[3]])
+    for new_class_lesson in new_class_schedule:
+        for lesson in user_schedule:
+            if lesson[0] == new_class_lesson[0] and not (lesson[1] >= new_class_lesson[2] or lesson[2] <= new_class_lesson[1]):
+                conflicts.append(lesson)
 
-	if conflicts:
-		return JsonResponse({"status": -1, "message": "Horário indisponível.", "conflicts": conflicts})
+    if conflicts:
+        return JsonResponse({"status": -1, "message": "Horário indisponível.", "conflicts": conflicts})
 
-	class_to_enroll = Class.objects.filter(id = payload["id"]).get()
-	user = Student.objects.filter(ra = payload["ra"]).get()
-	user.enrollments.add(class_to_enroll)
-	return JsonResponse({"status": 1, "message": "Matéria matriculada com sucesso."})
+    class_to_enroll = Class.objects.filter(id = payload["id"]).get()
+    user = Student.objects.filter(ra = payload["ra"]).get()
+    user.enrollments.add(class_to_enroll)
+    return JsonResponse({"status": 1, "message": "Matéria matriculada com sucesso."})
 

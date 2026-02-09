@@ -38,6 +38,8 @@ class Enrollment(models.Model):
         to_field='id',
         on_delete=models.CASCADE
     )
+    def __str__(self):
+        return f"{self.student.ra} {str(self.academic_class)}"
 
 
 class ClassLocation(models.Model): # Salas de aula
@@ -47,6 +49,8 @@ class ClassLocation(models.Model): # Salas de aula
     building = models.TextField()
     floor = models.IntegerField() 
 
+    def __str__(self):
+        return f"{self.building}"
 
 class ClassSchedule(models.Model): # Horarios das aulas das turmas
     class Weekdays(models.IntegerChoices):
@@ -67,6 +71,8 @@ class ClassSchedule(models.Model): # Horarios das aulas das turmas
         "institutional.ClassLocation", 
         on_delete=models.CASCADE,
     )
+    def __str__(self):
+        return f"{self.weekday} {self.start_hour}-{self.start_hour + self.lesson_count} {str(self.location)}"
 class Class(models.Model):  # turma específica (F159 Z)
     class ClassOffering(models.IntegerChoices): # Período em que a matéria é oferecida
         odd = 1
@@ -83,6 +89,10 @@ class Class(models.Model):  # turma específica (F159 Z)
     year_offered = models.IntegerField()
     period_offered = models.IntegerField(choices = ClassOffering)
     class_schedule = models.ManyToManyField(ClassSchedule)
+
+    def __str__(self):
+        return f"{self.course.code} {self.letter} {self.year_offered} {self.period_offered}"
+
 class Course(models.Model): # matéria que você paga
     class CourseLevel(models.IntegerChoices): # nível de graduação
         Undergraduate = 1

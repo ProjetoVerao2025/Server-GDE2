@@ -26,7 +26,7 @@ def class_page(request: HttpRequest):
 	req_class = Class.objects.filter(id = payload["id"]).get()
 	req_class_schedule = _get_schedule(req_class)
 
-	course = Course.objects.filter(id = req_class.course)
+	course = req_class.course
 	return JsonResponse({
 		"status": 1,
 		"message": "Turma encontrada",
