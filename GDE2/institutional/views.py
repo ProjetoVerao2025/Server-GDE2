@@ -1,6 +1,4 @@
-from django.shortcuts import render
 from django.http import HttpRequest, JsonResponse
-from django.db import models
 from .models import *
 from utils import _get_schedule, _get_current_period
 from datetime import datetime

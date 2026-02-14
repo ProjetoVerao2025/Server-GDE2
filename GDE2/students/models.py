@@ -13,14 +13,14 @@ class Attendance(models.Model):
 
     academic_class = models.ForeignKey(
         "institutional.Class",
-        to_field='id',
-        on_delete=models.CASCADE
+        to_field = 'id',
+        on_delete = models.CASCADE
     )
 
     student = models.ForeignKey(
         "students.Student",
-        to_field='ra',
-        on_delete=models.CASCADE
+        to_field = 'ra',
+        on_delete = models.CASCADE
     )
 
     date = models.DateTimeField()
@@ -31,7 +31,7 @@ class Attendance(models.Model):
 
 
     def __str__(self):
-        return f"{self.class_code}({self.letter})"
+        return f"{self.academic_class.class_code} {self.academic_class.letter} {str(self.date)} {self.status}"
 
 class Student(models.Model):
     class StudentLevel(models.IntegerChoices):

@@ -1,9 +1,7 @@
 from django.apps import apps
-from django.shortcuts import render
 from django.http import HttpRequest, JsonResponse
-from django.db import models
 from .models import *
-from datetime import *
+import datetime as dt
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
@@ -222,6 +220,7 @@ def enroll_student(request: HttpRequest):
 
     for new_class_lesson in new_class_schedule:
         for lesson in user_schedule:
+
             if lesson[0] == new_class_lesson[0] and not (lesson[1] >= new_class_lesson[2] or lesson[2] <= new_class_lesson[1]):
                 conflicts.append(lesson)
 
@@ -233,3 +232,31 @@ def enroll_student(request: HttpRequest):
     user.enrollments.add(class_to_enroll)
     return JsonResponse({"status": 1, "message": "Matéria matriculada com sucesso."})
 
+def list_absences(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+
+    if "id" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
+
+    user = Student.objects.filter(ra = payload["ra"])
+    if not user.exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+    user = user.get()
+
+    req_class = Class.objects.filter(id = payload["id"])
+    if not req_class.exists():
+        return JsonResponse({"status": -1, "message": f"Turma com ID {payload['id']} não existe"})
+    req_class = req_class.get()
+
+    if req_class not in user.enrollments.all():
+        return JsonResponse({"status": -1, "message": f"{user} não está matriculado em {req_class}"})
+
+    temp_func = lambda x: {"date": x.date}
+    absences = list(map(temp_func, Attendance.objects.filter(academic_class = payload["id"], student = payload["ra"], status = 2)))
+    return JsonResponse({"status": 1, "message": "Faltas encontradas", "absences": absences})
