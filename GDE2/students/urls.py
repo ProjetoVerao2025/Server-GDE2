@@ -9,5 +9,12 @@ urlpatterns = [
     path("logout/", logout_view, name = "logout"),
     path("whoami/", whoami, name = "whoami"),
     path("enroll/", enroll_student, name = "enroll"),
+    path("list-absences/", list_absences, name = "absences"),
+    
+
+
+
+    #temporary endpoint for API testing
+    path("updatedb/", update_presence)
 ]
 

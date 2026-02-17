@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.http import HttpRequest, JsonResponse
 from .models import *
-import datetime as dt
+from datetime import date, datetime, timedelta
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
@@ -260,3 +260,140 @@ def list_absences(request: HttpRequest):
     temp_func = lambda x: {"date": x.date}
     absences = list(map(temp_func, Attendance.objects.filter(academic_class = payload["id"], student = payload["ra"], status = 2)))
     return JsonResponse({"status": 1, "message": "Faltas encontradas", "absences": absences})
+
+def fetch_attendance(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+
+    if not Student.objects.filter(ra = payload["ra"]).exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+
+    temp_func = lambda x: {"date": x.date, "status": x.status, "class": x.academic_class}
+    attendance = list(map(temp_func, Attendance.objects.filter(student = payload["ra"])))
+    return JsonResponse({
+        "status": 1,
+        "message": "Presença encontrada",
+        "attendance": attendance
+    })
+
+def edit_attendance(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+
+    if "id" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
+
+    if "status" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'status'"})
+
+    if "date" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'date'"})
+
+    if "new_status" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'new_status'"})
+
+    if not Student.objects.filter(ra = payload["ra"]).exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+    
+    if not (payload["status"] >= 0 and payload["new_status"] <= 3):
+        return JsonResponse({"status": -1, "message": f"Status {payload['status']} inválido"})
+        
+    try:
+        day = date.fromisoformat(payload["date"])
+    except Exception:
+        return JsonResponse({"status": -1, "message": f"Falha ao coverter {payload["date"]} para objeto 'date'"})
+
+    attendance = Attendance.objects.filter(student = payload["ra"], date = day, status = payload["status"], academic_class = payload["id"])
+    if not attendance.exists():
+        return JsonResponse({"status": -1, "message": f"Objeto 'Attendance' a ser editado não foi encontrado"})
+
+    attendance.get()
+    attendance.status = payload["new_status"]
+    return JsonResponse({
+        "status": 1,
+        "message": f"Status de presença alterado para { payload['new_status'] }"
+    })
+        
+def create_attendance(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+
+    if "id" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'id'"})
+
+    if "status" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'status'"})
+
+    if "date" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'date'"})
+
+    if "ignoreSchedule" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ignoreSchedule'"})
+
+
+    if not Student.objects.filter(ra = payload["ra"]).exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+
+    if not Student.objects.filter(ra = payload["ra"], enrollments = payload["id"]).exists()
+        return JsonResponse({"status": -1, "message": f"Aluno de RA {payload['ra']} não matricualdo em matéria de ID {payload["id"]}"})
+
+    if not Class.objects.filter(id = payload["id"]).exists():
+        return JsonResponse({"status": -1, "message": f"Turma com ID {payload['id']} não existe"})
+
+    try:
+        day = date.fromisoformat(payload["date"])
+    except Exception:
+        return JsonResponse({"status": -1, "message": f"Falha ao coverter {payload["date"]} para objeto 'date'"})
+
+    if not payload["ignoreSchedule"] and not ClassSchedule.objects.filter(weekday = day.weekday(), rclass = payload["id"]).exists():
+        return JsonResponse({"status": -1, "message": f"Data ou horário inválidos"})
+
+    Attendance(
+        academic_class = payload["id"],
+        student = payload["ra"],
+        date = day,
+        status = payload["status"]
+        ).save()
+    return JsonResponse({"status": 1, "message": "Presença marcada com sucesso"});
+
+def update_presence(request: HttpRequest):
+    day = date.today() - timedelta(days = 1)
+    weekday = date.today().weekday()
+    weekday = weekday if weekday else 7
+    for class_schedule in ClassSchedule.objects.filter(weekday = weekday):
+        for _class in Class.objects.filter(class_schedule = class_schedule):
+            for student in Student.objects.filter(enrollments = _class):
+                Attendance(
+                    academic_class = _class,
+                    student = student,
+                    date = day,
+                    status = 1
+                ).save()
+        
+    for i in AttendanceIntent.objects.filter(date = day).exclude(id = 1):
+        attendances = Attendance.objects.filter(
+            academic_class = i.academic_class,
+            student = i.student,
+            date = day,
+            status = 1
+        )
+        for a in attendances:
+            a.status = i.status
+            a.save()
+    AttendanceIntent.objects.all().delete()
+    return JsonResponse({"status": 1})

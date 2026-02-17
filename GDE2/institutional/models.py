@@ -41,7 +41,7 @@ class Enrollment(models.Model):
     def __str__(self):
         return f"{self.student.ra} {str(self.academic_class)}"
 
-
+#DEPRECATED
 class ClassLocation(models.Model): # Salas de aula
     id = models.IntegerField(primary_key=True, auto_created=True)
     name = models.TextField()
@@ -67,12 +67,10 @@ class ClassSchedule(models.Model): # Horarios das aulas das turmas
     lesson_count = models.IntegerField()
 
     # Sala onde a aula ocorre
-    location = models.ForeignKey(
-        "institutional.ClassLocation", 
-        on_delete=models.CASCADE,
-    )
+    location = models.CharField(max_length = 6)
     def __str__(self):
         return f"{self.weekday} {self.start_hour}-{self.start_hour + self.lesson_count} {str(self.location)}"
+
 class Class(models.Model):  # turma específica (F159 Z)
     class ClassOffering(models.IntegerChoices): # Período em que a matéria é oferecida
         odd = 1
@@ -88,7 +86,7 @@ class Class(models.Model):  # turma específica (F159 Z)
     letter = models.CharField(max_length=1)
     year_offered = models.IntegerField()
     period_offered = models.IntegerField(choices = ClassOffering)
-    class_schedule = models.ManyToManyField(ClassSchedule)
+    class_schedule = models.ManyToManyField(ClassSchedule, related_name = "rclass")
 
     def __str__(self):
         return f"{self.course.code} {self.letter} {self.year_offered} {self.period_offered}"

@@ -15,7 +15,7 @@ def _get_schedule(_class: Class):
 				"weekday": x.weekday,
 				"start_hour": x.start_hour,
 				"lesson_count": x.lesson_count,
-				"location": x.location.building
+				"location": x.location
 			},
 			_class.class_schedule.all()
 		),
