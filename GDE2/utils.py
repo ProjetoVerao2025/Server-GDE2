@@ -43,3 +43,16 @@ def _get_enrolls(user: Student):
     	"letter": e.letter
     	})
 	return enrolls
+
+def _notify_user(ra: int):
+    user = Student.objects.filter(ra = ra)
+    if not user.exists():
+        return JsonResponse({"status": -1, "message": f"RA {ra} não cadastrado"})
+    
+    user = user.get()
+    return JsonResponse ({
+        "status": 1,
+        "message": f"notificações do usuário de RA {user} adquiridas com sucesso",
+        "notifications": sorted(map(lambda x: {"time": str(x.time), "message": x.message} , user.notifications), key = lambda x: x["time"]),
+
+    })

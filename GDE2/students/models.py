@@ -88,4 +88,22 @@ class Student(models.Model):
     def __str__(self):
         return f"{self.ra:06d}"
 
-
+class Notification(models.Model):
+    class NotificationType(models.IntegerChoices):
+        NoClass = 0
+        Test = 1
+        Covered = 2
+                
+    time = models.DateTimeField()
+    student = models.ManyToManyField(
+        Student,
+        related_name = "notifications",
+        blank= True
+    )
+    
+    sender = models.ManyToManyField(
+        Student,
+        related_name = "sent_notifications",
+        blank= True
+    )
+    reports_num = models.IntegerField(choices = NotificationType)

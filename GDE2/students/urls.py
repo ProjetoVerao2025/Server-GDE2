@@ -10,8 +10,8 @@ urlpatterns = [
     path("whoami/", whoami, name = "whoami"),
     path("enroll/", enroll_student, name = "enroll"),
     path("list-absences/", list_absences, name = "absences"),
-    
-
+    path("notifications/", notify_user, name = "notifications")    ,
+    path("report/", special_dates, name = "special_dates")
 
 
     #temporary endpoint for API testing

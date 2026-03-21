@@ -1,5 +1,5 @@
 from django.apps import apps
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, JsonResponse, HttpResponse
 from .models import *
 from datetime import date, datetime, timedelta
 import json
@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth import logout, login
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import authenticate
-from utils import _get_schedule, _get_enrolls
+from utils import _get_schedule, _get_enrolls, _notify_user
 from institutional.models import Course, ClassSchedule
 
 
@@ -311,7 +311,7 @@ def edit_attendance(request: HttpRequest):
     try:
         day = date.fromisoformat(payload["date"])
     except Exception:
-        return JsonResponse({"status": -1, "message": f"Falha ao coverter {payload["date"]} para objeto 'date'"})
+        return JsonResponse({"status": -1, "message": f"Falha ao coverter {payload['date']} para objeto 'date'"})
 
     attendance = Attendance.objects.filter(student = payload["ra"], date = day, status = payload["status"], academic_class = payload["id"])
     if not attendance.exists():
@@ -349,8 +349,8 @@ def create_attendance(request: HttpRequest):
     if not Student.objects.filter(ra = payload["ra"]).exists():
         return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
 
-    if not Student.objects.filter(ra = payload["ra"], enrollments = payload["id"]).exists()
-        return JsonResponse({"status": -1, "message": f"Aluno de RA {payload['ra']} não matricualdo em matéria de ID {payload["id"]}"})
+    if not Student.objects.filter(ra = payload["ra"], enrollments = payload["id"]).exists():
+        return JsonResponse({"status": -1, "message": f"Aluno de RA {payload['ra']} não matricualdo em matéria de ID {payload['id']}"})
 
     if not Class.objects.filter(id = payload["id"]).exists():
         return JsonResponse({"status": -1, "message": f"Turma com ID {payload['id']} não existe"})
@@ -358,7 +358,7 @@ def create_attendance(request: HttpRequest):
     try:
         day = date.fromisoformat(payload["date"])
     except Exception:
-        return JsonResponse({"status": -1, "message": f"Falha ao coverter {payload["date"]} para objeto 'date'"})
+        return JsonResponse({"status": -1, "message": f"Falha ao coverter {payload['date']} para objeto 'date'"})
 
     if not payload["ignoreSchedule"] and not ClassSchedule.objects.filter(weekday = day.weekday(), rclass = payload["id"]).exists():
         return JsonResponse({"status": -1, "message": f"Data ou horário inválidos"})
@@ -397,3 +397,32 @@ def update_presence(request: HttpRequest):
             a.save()
     AttendanceIntent.objects.all().delete()
     return JsonResponse({"status": 1})
+
+def notify_user(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+    
+    return _notify_user(payload['ra'])
+
+def special_dates(request: HttpRequest):
+    try:
+        payload = json.loads(request.body)
+    
+    except:
+        return JsonResponse({"status": -1, "message": "Erro ao carregar o arquivo JSON"})
+    
+    if "ra" not in payload:
+        return JsonResponse({"status": -1, "message": "Request não contém campo 'ra'"})
+    
+    user = Student.objects.filter(ra = payload["ra"])
+    
+    if not user.exists():
+        return JsonResponse({"status": -1, "message": f"RA {payload['ra']} não cadastrado"})
+        
+    
+    
